@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Forecasting Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #080c14;
+            --surface: #0e1521;
+            --surface2: #131d2e;
+            --border: rgba(255, 255, 255, 0.07);
+            --border2: rgba(255, 255, 255, 0.14);
+            --accent: #3b82f6;
+            --accent2: #8b5cf6;
+            --green: #10b981;
+            --red: #ef4444;
+            --yellow: #f59e0b;
+            --text: #e2e8f0;
+            --text-dim: #64748b;
+            --text-mid: #94a3b8;
+            --sidebar: 260px;
+            --font-body: 'DM Sans', sans-serif;
+            --font-head: 'Syne', sans-serif;
+            --font-mono: 'DM Mono', monospace;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* LAYOUT */
+        .layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: var(--sidebar);
+            flex-shrink: 0;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            padding: 1.75rem 1.25rem;
+            z-index: 200;
+            overflow-y: auto;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .brand-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .brand-name {
+            font-family: var(--font-head);
+            font-size: 1rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+        }
+
+        .brand-sub {
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .nav-label {
+            font-size: 0.6rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            padding-left: 0.6rem;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.6rem 0.75rem;
+            border-radius: 8px;
+            color: var(--text-mid);
+            font-size: 0.825rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 0.2rem;
+            text-decoration: none;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text);
+        }
+
+        .nav-item.active {
+            background: rgba(59, 130, 246, 0.12);
+            color: var(--accent);
+        }
+
+        .nav-icon {
+            font-size: 0.9rem;
+            width: 18px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .model-badge {
+            margin-left: auto;
+            font-size: 0.6rem;
+            padding: 1px 6px;
+            border-radius: 99px;
+            font-weight: 700;
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-dim);
+        }
+
+        .model-badge.winner {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--green);
+        }
+
+        .nav-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 1rem 0;
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 0.875rem 1rem;
+            background: var(--surface2);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+
+        .status-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.72rem;
+            color: var(--text-mid);
+        }
+
+        .pulse-dot {
+            width: 7px;
+            height: 7px;
+            background: var(--green);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--green);
+            animation: pulse 2s infinite;
+            flex-shrink: 0;
+        }
+
+        .pulse-dot.offline {
+            background: var(--red);
+            box-shadow: 0 0 8px var(--red);
+            animation: none;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1)
+            }
+
+            50% {
+                opacity: 0.5;
+                transform: scale(1.4)
+            }
+        }
+
+        /* MAIN */
+        .main {
+            margin-left: var(--sidebar);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            width: calc(100% - var(--sidebar));
+        }
+
+        /* TOPBAR */
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(8, 12, 20, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 0.875rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .page-title {
+            font-family: var(--font-head);
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .badge {
+            font-size: 0.68rem;
+            padding: 0.25rem 0.7rem;
+            border-radius: 99px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            white-space: nowrap;
+        }
+
+        .badge-blue {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--accent);
+            border: 1px solid rgba(59, 130, 246, 0.25);
+        }
+
+        .badge-green {
+            background: rgba(16, 185, 129, 0.12);
+            color: var(--green);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .badge-purple {
+            background: rgba(139, 92, 246, 0.12);
+            color: var(--accent2);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+        }
+
+        .badge-red {
+            background: rgba(239, 68, 68, 0.12);
+            color: var(--red);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        /* CONTENT */
+        .content {
+            padding: 2rem;
+            flex: 1;
+        }
+
+        .section-block {
+            margin-bottom: 2.5rem;
+        }
+
+        .section-heading {
+            font-family: var(--font-head);
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            margin-bottom: 0.3rem;
+        }
+
+        .section-sub {
+            font-size: 0.825rem;
+            color: var(--text-dim);
+            margin-bottom: 1.5rem;
+        }
+
+        /* DIVIDER */
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 0.875rem;
+            margin: 2rem 0 1.25rem;
+        }
+
+        .divider-title {
+            font-family: var(--font-head);
+            font-size: 0.95rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .divider-line {
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        /* KPI GRID */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .kpi-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.25rem;
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.2s, transform 0.2s;
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent), var(--accent2));
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .kpi-card:hover {
+            border-color: var(--border2);
+            transform: translateY(-2px);
+        }
+
+        .kpi-card:hover::before {
+            opacity: 1;
+        }
+
+        .kpi-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            margin-bottom: 0.875rem;
+        }
+
+        .kpi-label {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-dim);
+            font-weight: 700;
+            margin-bottom: 0.35rem;
+        }
+
+        .kpi-value {
+            font-family: var(--font-head);
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            line-height: 1;
+        }
+
+        .kpi-sub {
+            font-size: 0.68rem;
+            color: var(--text-dim);
+            margin-top: 0.35rem;
+        }
+
+        /* MODEL INFO PANEL */
+        .model-info-panel {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--accent);
+            border-radius: 12px;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: none;
+        }
+
+        .model-info-panel.visible {
+            display: block;
+        }
+
+        .model-info-name {
+            font-family: var(--font-head);
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+        }
+
+        .model-info-desc {
+            font-size: 0.825rem;
+            color: var(--text-mid);
+            line-height: 1.65;
+        }
+
+        .model-info-tags {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+            margin-top: 0.75rem;
+        }
+
+        .model-tag {
+            font-size: 0.65rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 99px;
+            font-weight: 700;
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--accent);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        /* EDA GRID */
+        .eda-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .chart-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: border-color 0.2s;
+        }
+
+        .chart-card:hover {
+            border-color: var(--border2);
+        }
+
+        .chart-card-header {
+            padding: 1rem 1.25rem 0.6rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chart-card-title {
+            font-size: 0.825rem;
+            font-weight: 600;
+        }
+
+        .chart-card-sub {
+            font-size: 0.68rem;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+
+        .chart-card-body {
+            padding: 0 1.25rem 1.25rem;
+        }
+
+        .chart-card-body img {
+            width: 100%;
+            border-radius: 8px;
+            display: block;
+            transition: transform 0.3s;
+        }
+
+        .chart-card-body img:hover {
+            transform: scale(1.015);
+        }
+
+        .chart-placeholder {
+            padding: 2.5rem 1rem;
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.78rem;
+            background: var(--surface2);
+            border-radius: 8px;
+        }
+
+        /* FORECAST PANEL */
+        .forecast-panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        .forecast-panel-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .forecast-panel-title {
+            font-family: var(--font-head);
+            font-size: 0.95rem;
+            font-weight: 700;
+        }
+
+        .forecast-panel-sub {
+            font-size: 0.72rem;
+            color: var(--text-dim);
+            margin-top: 0.2rem;
+        }
+
+        .forecast-panel-body {
+            padding: 1.5rem;
+        }
+
+        /* CONTROLS */
+        .controls-row {
+            display: flex;
+            gap: 0.875rem;
+            margin-bottom: 1.5rem;
+            align-items: center;
+        }
+
+        .select-wrap {
+            flex: 1;
+            position: relative;
+        }
+
+        .select-wrap::after {
+            content: '▾';
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-dim);
+            pointer-events: none;
+        }
+
+        select {
+            width: 100%;
+            background: var(--surface2);
+            color: var(--text);
+            border: 1px solid var(--border2);
+            padding: 0.75rem 2.5rem 0.75rem 1rem;
+            border-radius: 10px;
+            font-size: 0.875rem;
+            font-family: var(--font-body);
+            outline: none;
+            appearance: none;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        select:focus {
+            border-color: var(--accent);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            font-size: 0.875rem;
+            font-weight: 700;
+            font-family: var(--font-body);
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.35);
+        }
+
+        /* RESULTS */
+        #forecast-results {
+            width: 100%;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-dim);
+            padding: 3rem 1rem;
+        }
+
+        .empty-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.75rem;
+            opacity: 0.35;
+        }
+
+        .empty-text {
+            font-size: 0.825rem;
+        }
+
+        /* SPINNER */
+        .spinner-wrap {
+            text-align: center;
+            padding: 3rem;
+        }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--border2);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.75s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        .spinner-text {
+            font-size: 0.78rem;
+            color: var(--text-dim);
+        }
+
+        /* RESULT KPIs */
+        .result-kpis {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .result-kpi {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.1rem 1.25rem;
+            text-align: center;
+        }
+
+        .result-kpi-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-dim);
+            font-weight: 700;
+            margin-bottom: 0.4rem;
+        }
+
+        .result-kpi-value {
+            font-family: var(--font-head);
+            font-size: 1.25rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        /* CHARTS ROW */
+        .charts-row {
+            display: grid;
+            grid-template-columns: 3fr 2fr;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .inner-chart-card {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.1rem 1.25rem;
+        }
+
+        .inner-chart-title {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-mid);
+            margin-bottom: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+        }
+
+        /* TABLE */
+        .table-wrap {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .table-head {
+            padding: 0.875rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .table-head-title {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--text-mid);
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead tr {
+            background: var(--surface);
+        }
+
+        th {
+            padding: 0.7rem 1.25rem;
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-dim);
+            font-weight: 700;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 0.8rem 1.25rem;
+            font-size: 0.825rem;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.15s;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .td-week {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        .td-date {
+            color: var(--text-mid);
+            font-size: 0.8rem;
+        }
+
+        .td-sales {
+            font-family: var(--font-mono);
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .change-up {
+            color: var(--green);
+            font-weight: 700;
+            font-size: 0.78rem;
+        }
+
+        .change-down {
+            color: var(--red);
+            font-weight: 700;
+            font-size: 0.78rem;
+        }
+
+        .change-nil {
+            color: var(--text-dim);
+            font-size: 0.78rem;
+        }
+
+        /* ERROR */
+        .error-box {
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 10px;
+            padding: 1.25rem 1.5rem;
+            color: #fca5a5;
+            font-size: 0.825rem;
+            text-align: center;
+        }
+
+        /* FOOTER */
+        .footer {
+            padding: 1.25rem 2rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.72rem;
+            color: var(--text-dim);
+        }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border2);
+            border-radius: 99px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="layout">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-icon">📈</div>
+                <div>
+                    <div class="brand-name">ForecastIQ</div>
+                    <div class="brand-sub">ML Prediction Engine</div>
+                </div>
+            </div>
+
+            <div class="nav-label">Navigation</div>
+            <a class="nav-item active" href="#overview" onclick="setActive(this)"><span class="nav-icon">⊞</span>
+                Overview</a>
+            <a class="nav-item" href="#eda" onclick="setActive(this)"><span class="nav-icon">◎</span> Data
+                Exploration</a>
+            <a class="nav-item" href="#forecast" onclick="setActive(this)"><span class="nav-icon">◈</span> Forecast
+                Engine</a>
+
+            <div class="nav-divider"></div>
+            <div class="nav-label">ML Models — click to learn more</div>
+
+            <button class="nav-item" onclick="showModel('SARIMA');  setActive(this)"><span class="nav-icon">▸</span>
+                SARIMA <span class="model-badge" id="badge-SARIMA">stats</span></button>
+            <button class="nav-item" onclick="showModel('Prophet'); setActive(this)"><span class="nav-icon">▸</span>
+                Prophet <span class="model-badge" id="badge-Prophet">Meta</span></button>
+            <button class="nav-item" onclick="showModel('XGBoost'); setActive(this)"><span class="nav-icon">▸</span>
+                XGBoost <span class="model-badge" id="badge-XGBoost">ML</span></button>
+            <button class="nav-item" onclick="showModel('LSTM');    setActive(this)"><span class="nav-icon">▸</span>
+                LSTM <span class="model-badge" id="badge-LSTM">DL</span></button>
+
+            <div class="sidebar-footer">
+                <div class="status-row">
+                    <div class="pulse-dot" id="api-dot"></div>
+                    <span id="api-status-text">Connecting…</span>
+                </div>
+                <div style="font-size:0.65rem;color:var(--text-dim);margin-top:0.3rem;" id="api-sub">Checking…</div>
+            </div>
+        </aside>
+
+        <!-- MAIN -->
+        <div class="main">
+            <div class="topbar">
+                <div class="page-title">Sales Forecasting Dashboard</div>
+                <div class="topbar-right">
+                    <span class="badge badge-blue">8-Week Forecast</span>
+                    <span class="badge badge-purple">4 ML Models</span>
+                    <span class="badge badge-green" id="states-badge">Loading…</span>
+                </div>
+            </div>
+
+            <div class="content">
+
+                <!-- OVERVIEW -->
+                <div id="overview" class="section-block">
+                    <div class="section-heading">Sales Overview</div>
+                    <div class="section-sub">Live summary auto-loaded from your API on page load</div>
+                    <div class="kpi-grid">
+                        <div class="kpi-card">
+                            <div class="kpi-icon" style="background:rgba(59,130,246,0.1)">🗺️</div>
+                            <div class="kpi-label">Total States</div>
+                            <div class="kpi-value" id="kpi-states">—</div>
+                            <div class="kpi-sub">Active regional models</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-icon" style="background:rgba(16,185,129,0.1)">🏆</div>
+                            <div class="kpi-label">Best Overall Model</div>
+                            <div class="kpi-value" style="font-size:1.1rem;color:var(--green)" id="kpi-model">—</div>
+                            <div class="kpi-sub">Lowest avg MAE</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-icon" style="background:rgba(245,158,11,0.1)">📉</div>
+                            <div class="kpi-label">Avg MAE Score</div>
+                            <div class="kpi-value" style="color:var(--yellow)" id="kpi-mae">—</div>
+                            <div class="kpi-sub">Mean absolute error</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-icon" style="background:rgba(139,92,246,0.1)">🔮</div>
+                            <div class="kpi-label">Forecast Horizon</div>
+                            <div class="kpi-value" style="color:var(--accent2)">8 Weeks</div>
+                            <div class="kpi-sub">Per state window</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODEL INFO PANEL -->
+                <div class="model-info-panel" id="model-info-panel">
+                    <div class="model-info-name" id="mi-name">—</div>
+                    <div class="model-info-desc" id="mi-desc">—</div>
+                    <div class="model-info-tags" id="mi-tags"></div>
+                </div>
+
+                <!-- EDA -->
+                <div id="eda" class="section-block">
+                    <div class="divider">
+                        <div class="divider-title">📊 Exploratory Data Analysis</div>
+                        <div class="divider-line"></div>
+                        <span class="badge badge-blue">4 Charts</span>
+                    </div>
+                    <div class="eda-grid">
+                        <div class="chart-card">
+                            <div class="chart-card-header">
+                                <div>
+                                    <div class="chart-card-title">Sales Trend Over Time</div>
+                                    <div class="chart-card-sub">Historical weekly sales by state</div>
+                                </div>
+                                <span class="badge badge-blue">Trend</span>
+                            </div>
+                            <div class="chart-card-body"><img src="charts/eda_chart_1_sales_trend.png" alt="Sales Trend"
+                                    onerror="this.outerHTML='<div class=chart-placeholder>📁 charts/eda_chart_1_sales_trend.png</div>'">
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <div class="chart-card-header">
+                                <div>
+                                    <div class="chart-card-title">Total Sales Per State</div>
+                                    <div class="chart-card-sub">Cumulative volume comparison</div>
+                                </div>
+                                <span class="badge badge-purple">Ranking</span>
+                            </div>
+                            <div class="chart-card-body"><img src="charts/eda_chart_2_total_sales_per_state.png"
+                                    alt="Total Sales"
+                                    onerror="this.outerHTML='<div class=chart-placeholder>📁 charts/eda_chart_2_total_sales_per_state.png</div>'">
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <div class="chart-card-header">
+                                <div>
+                                    <div class="chart-card-title">Monthly Seasonality</div>
+                                    <div class="chart-card-sub">Average sales by calendar month</div>
+                                </div>
+                                <span class="badge badge-green">Seasonal</span>
+                            </div>
+                            <div class="chart-card-body"><img src="charts/eda_chart_3_monthly_average.png"
+                                    alt="Monthly Avg"
+                                    onerror="this.outerHTML='<div class=chart-placeholder>📁 charts/eda_chart_3_monthly_average.png</div>'">
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <div class="chart-card-header">
+                                <div>
+                                    <div class="chart-card-title">Sales Distribution</div>
+                                    <div class="chart-card-sub">Spread per state — boxplot view</div>
+                                </div>
+                                <span class="badge badge-blue">Distribution</span>
+                            </div>
+                            <div class="chart-card-body"><img src="charts/eda_chart_4_distribution.png"
+                                    alt="Distribution"
+                                    onerror="this.outerHTML='<div class=chart-placeholder>📁 charts/eda_chart_4_distribution.png</div>'">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FORECAST -->
+                <div id="forecast" class="section-block">
+                    <div class="divider">
+                        <div class="divider-title">🔮 8-Week Forecast Engine</div>
+                        <div class="divider-line"></div>
+                        <span class="badge badge-purple">Live API</span>
+                    </div>
+                    <div class="forecast-panel">
+                        <div class="forecast-panel-header">
+                            <div>
+                                <div class="forecast-panel-title">State Forecast Generator</div>
+                                <div class="forecast-panel-sub">Select a state — best model is chosen automatically
+                                </div>
+                            </div>
+                            <span class="badge badge-green" id="forecast-badge">Ready</span>
+                        </div>
+                        <div class="forecast-panel-body">
+                            <div class="controls-row">
+                                <div class="select-wrap">
+                                    <select id="state-select">
+                                        <option value="">— Select a State —</option>
+                                    </select>
+                                </div>
+                                <button class="btn btn-primary" onclick="fetchForecast()">Generate Forecast ›</button>
+                            </div>
+                            <div id="forecast-results">
+                                <div class="empty-state">
+                                    <div class="empty-icon">📡</div>
+                                    <div class="empty-text">Select a state above to load the 8-week forecast</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- /content -->
+
+            <div class="footer">
+                <span>Data Science Assignment · End-to-End Time Series Forecasting System</span>
+                <span>SARIMA · Prophet · XGBoost · LSTM</span>
+            </div>
+        </div><!-- /main -->
+    </div><!-- /layout -->
+
+    <script>
+        const API = 'http://localhost:8003';
+
+        const MODEL_INFO = {
+            SARIMA: { name: 'SARIMA — Seasonal AutoRegressive Integrated Moving Average', desc: 'A classical statistical model that captures trend, seasonality and autocorrelation. It uses past values and past forecast errors to predict future values. Best for data with clear repeating seasonal patterns.', tags: ['Statistical', 'Trend', 'Seasonality', 'Interpretable', 'No Feature Engineering Needed'] },
+            Prophet: { name: 'Prophet — Facebook / Meta Forecasting Model', desc: 'An additive model by Meta that handles daily, weekly and yearly seasonality plus holiday effects automatically. Very robust to missing data and sudden trend changes. Easy to tune.', tags: ['Meta / Facebook', 'Holiday Aware', 'Robust', 'Auto Seasonality', 'Handles Missing Data'] },
+            XGBoost: { name: 'XGBoost — Extreme Gradient Boosting', desc: 'A powerful ML model that uses lag features (t-1, t-7, t-30), rolling statistics and calendar features as inputs. Extremely fast and often the most accurate model on tabular time series data.', tags: ['Gradient Boosting', 'Uses Lag Features', 'Feature Engineering', 'Fast Training', 'Most Accurate'] },
+            LSTM: { name: 'LSTM — Long Short-Term Memory Neural Network', desc: 'A deep learning model that uses memory cells to remember long-term patterns in sequential data. It learns temporal dependencies automatically without manual feature engineering.', tags: ['Deep Learning', 'Neural Network', 'Sequence Model', 'Memory Cells', 'TensorFlow / Keras'] }
+        };
+
+        // ── INIT ──
+        window.addEventListener('DOMContentLoaded', async () => {
+            await checkAPI();
+            await loadStates();
+            await loadSummary();
+        });
+
+        // ── API CHECK ──
+        async function checkAPI() {
+            const dot = document.getElementById('api-dot');
+            const txt = document.getElementById('api-status-text');
+            const sub = document.getElementById('api-sub');
+            try {
+                const r = await fetch(`${API}/`);
+                if (r.ok) {
+                    dot.classList.remove('offline');
+                    txt.textContent = 'API Connected';
+                    sub.textContent = `Port ${API.split(':').pop()}`;
+                } else throw new Error();
+            } catch {
+                dot.classList.add('offline');
+                txt.textContent = 'API Offline';
+                sub.textContent = 'Run: uvicorn api.main:app --reload';
+                document.getElementById('states-badge').textContent = 'API Offline';
+                document.getElementById('states-badge').className = 'badge badge-red';
+            }
+        }
+
+        // ── LOAD STATES ──
+        async function loadStates() {
+            try {
+                const r = await fetch(`${API}/states`);
+                const data = await r.json();
+                const states = Array.isArray(data) ? data : (data.states || []);
+                const sel = document.getElementById('state-select');
+                sel.innerHTML = '<option value="">— Select a State —</option>';
+                states.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; sel.appendChild(o); });
+                document.getElementById('states-badge').textContent = `${states.length} States`;
+                document.getElementById('kpi-states').textContent = states.length;
+            } catch (e) { console.error('loadStates', e); }
+        }
+
+        // ── LOAD SUMMARY ──
+        async function loadSummary() {
+            try {
+                const r = await fetch(`${API}/summary`);
+                const data = await r.json();
+                const mae = data.average_mae;
+                document.getElementById('kpi-model').textContent = data.best_overall_model || '—';
+                document.getElementById('kpi-mae').textContent = mae >= 1e6 ? `${(mae / 1e6).toFixed(1)}M` : mae >= 1e3 ? `${(mae / 1e3).toFixed(1)}K` : mae ? mae.toFixed(1) : '—';
+                if (data.best_overall_model) {
+                    const b = document.getElementById(`badge-${data.best_overall_model}`);
+                    if (b) { b.textContent = '🏆 Best'; b.classList.add('winner'); }
+                }
+            } catch (e) { console.error('loadSummary', e); }
+        }
+
+        // ── SHOW MODEL INFO ──
+        function showModel(name) {
+            const info = MODEL_INFO[name];
+            const panel = document.getElementById('model-info-panel');
+            if (!info) return;
+            document.getElementById('mi-name').textContent = info.name;
+            document.getElementById('mi-desc').textContent = info.desc;
+            document.getElementById('mi-tags').innerHTML = info.tags.map(t => `<span class="model-tag">${t}</span>`).join('');
+            panel.classList.add('visible');
+            panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // ── SET ACTIVE ──
+        function setActive(el) {
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            el.classList.add('active');
+        }
+
+        // ── FETCH FORECAST ──
+        async function fetchForecast() {
+            const state = document.getElementById('state-select').value;
+            const display = document.getElementById('forecast-results');
+            if (!state) return;
+
+            ['forecastChart', 'compareChart'].forEach(id => { const c = Chart.getChart(id); if (c) c.destroy(); });
+
+            document.getElementById('forecast-badge').textContent = 'Loading…';
+            display.innerHTML = `<div class="spinner-wrap"><div class="spinner"></div><div class="spinner-text">Generating forecast for <strong>${state}</strong>…</div></div>`;
+
+            try {
+                const [fRes, cRes] = await Promise.all([
+                    fetch(`${API}/forecast/${encodeURIComponent(state)}`),
+                    fetch(`${API}/models/compare/${encodeURIComponent(state)}`)
+                ]);
+                if (!fRes.ok) throw new Error(`API returned ${fRes.status}`);
+                const fData = await fRes.json();
+                const cData = cRes.ok ? await cRes.json() : null;
+                if (!fData.predictions?.length) throw new Error(fData.detail || 'No predictions returned');
+                renderResults(fData, cData, display);
+                document.getElementById('forecast-badge').textContent = '✓ Done';
+            } catch (err) {
+                document.getElementById('forecast-badge').textContent = 'Error';
+                display.innerHTML = `<div class="error-box">⚠️ ${err.message}<br><small style="opacity:0.7;margin-top:0.5rem;display:block;">Make sure API is running: <code>uvicorn api.main:app --reload --port 8003</code></small></div>`;
+            }
+        }
+
+        // ── RENDER RESULTS ──
+        function renderResults(data, cData, container) {
+            const preds = data.predictions;
+            const total = preds.reduce((s, p) => s + p.predicted_sales, 0);
+            const mae = data.mae_score;
+            const maeStr = mae >= 1e6 ? `${(mae / 1e6).toFixed(1)}M` : mae >= 1e3 ? `${(mae / 1e3).toFixed(1)}K` : mae?.toFixed(1) ?? '—';
+
+            container.innerHTML = `
+    <div class="result-kpis">
+      <div class="result-kpi"><div class="result-kpi-label">Best Model</div><div class="result-kpi-value" style="color:var(--accent)">${data.best_model ?? '—'}</div></div>
+      <div class="result-kpi"><div class="result-kpi-label">Model MAE</div><div class="result-kpi-value" style="color:var(--yellow)">${maeStr}</div></div>
+      <div class="result-kpi"><div class="result-kpi-label">8-Week Total</div><div class="result-kpi-value" style="color:var(--green)">${total.toLocaleString('en-US', { maximumFractionDigits: 0 })}</div></div>
+    </div>
+    <div class="charts-row">
+      <div class="inner-chart-card"><div class="inner-chart-title">📈 Sales Projection — ${data.state}</div><canvas id="forecastChart"></canvas></div>
+      <div class="inner-chart-card"><div class="inner-chart-title">📊 Model Comparison (MAE — lower is better)</div><canvas id="compareChart"></canvas></div>
+    </div>
+    <div class="table-wrap">
+      <div class="table-head"><div class="table-head-title">${data.state} — Weekly Breakdown</div><span class="badge badge-blue">${preds.length} weeks</span></div>
+      <table><thead><tr><th>Week</th><th>Date</th><th>Predicted Sales</th><th>vs Last Week</th></tr></thead><tbody id="ftbody"></tbody></table>
+    </div>`;
+
+            const tbody = document.getElementById('ftbody');
+            preds.forEach((p, i) => {
+                const tr = document.createElement('tr');
+                let ch = '<span class="change-nil">—</span>';
+                if (i > 0) {
+                    const d = ((p.predicted_sales - preds[i - 1].predicted_sales) / preds[i - 1].predicted_sales) * 100;
+                    ch = `<span class="${d >= 0 ? 'change-up' : 'change-down'}">${d >= 0 ? '↑' : '↓'} ${Math.abs(d).toFixed(1)}%</span>`;
+                }
+                tr.innerHTML = `<td class="td-week">W${p.week ?? (i + 1)}</td><td class="td-date">${p.date}</td><td class="td-sales">${p.predicted_sales.toLocaleString('en-US', { maximumFractionDigits: 0 })}</td><td>${ch}</td>`;
+                tbody.appendChild(tr);
+            });
+
+            drawForecast(data);
+            if (cData) drawCompare(cData);
+        }
+
+        // ── FORECAST CHART ──
+        function drawForecast(data) {
+            const preds = data.predictions;
+            const hist = data.history || [];
+            const hL = hist.map(h => h.Date ?? h.date ?? '');
+            const hV = hist.map(h => h.Total ?? h.sales ?? 0);
+            const pL = preds.map(p => p.date);
+            const pV = preds.map(p => p.predicted_sales);
+            const last = hV.at(-1) ?? null;
+            const bridge = [...Array(Math.max(hV.length - 1, 0)).fill(null), last, ...pV];
+
+            new Chart(document.getElementById('forecastChart'), {
+                type: 'line',
+                data: {
+                    labels: [...hL, ...pL],
+                    datasets: [
+                        { label: 'Historical', data: [...hV, ...Array(pV.length).fill(null)], borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.07)', fill: true, tension: 0.4, pointRadius: 2, borderWidth: 2 },
+                        { label: '8-Week Forecast', data: bridge, borderColor: '#ef4444', borderDash: [6, 4], backgroundColor: 'transparent', fill: false, tension: 0.4, pointRadius: 3, pointBackgroundColor: '#ef4444', borderWidth: 2 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { labels: { color: '#94a3b8', font: { size: 11 }, boxWidth: 14 } },
+                        annotation: hL.length ? { annotations: { split: { type: 'line', xMin: hL.length - 0.5, xMax: hL.length - 0.5, borderColor: 'rgba(148,163,184,0.3)', borderWidth: 1.5, borderDash: [4, 4], label: { display: true, content: 'Forecast Start', position: 'start', backgroundColor: 'rgba(59,130,246,0.8)', color: '#fff', font: { size: 9 }, padding: { x: 6, y: 3 } } } } } : {}
+                    },
+                    scales: {
+                        x: { ticks: { color: '#475569', font: { size: 9 }, maxTicksLimit: 10 }, grid: { color: 'rgba(255,255,255,0.03)' } },
+                        y: { ticks: { color: '#475569', font: { size: 9 }, callback: v => v >= 1e6 ? `${(v / 1e6).toFixed(1)}M` : v >= 1e3 ? `${(v / 1e3).toFixed(0)}K` : v }, grid: { color: 'rgba(255,255,255,0.04)' } }
+                    }
+                }
+            });
+        }
+
+        // ── COMPARE CHART ──
+        function drawCompare(cData) {
+            const comps = cData.comparisons || [];
+            if (!comps.length) return;
+            new Chart(document.getElementById('compareChart'), {
+                type: 'bar',
+                data: {
+                    labels: comps.map(c => c.model),
+                    datasets: [{ label: 'MAE', data: comps.map(c => c.mae), backgroundColor: ['rgba(59,130,246,0.6)', 'rgba(139,92,246,0.6)', 'rgba(16,185,129,0.6)', 'rgba(245,158,11,0.6)'], borderColor: ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b'], borderWidth: 1, borderRadius: 5 }]
+                },
+                options: {
+                    indexAxis: 'y', responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { ticks: { color: '#475569', font: { size: 9 }, callback: v => v >= 1e6 ? `${(v / 1e6).toFixed(0)}M` : v >= 1e3 ? `${(v / 1e3).toFixed(0)}K` : v }, grid: { color: 'rgba(255,255,255,0.04)' } },
+                        y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>
