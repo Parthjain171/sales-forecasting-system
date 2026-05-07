@@ -1,14 +1,19 @@
+from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
 import numpy as np
 
+# Get the project root directory
+ROOT_DIR = Path(__file__).resolve().parent.parent
+
 def generate_all_charts():
-    os.makedirs('charts', exist_ok=True)
+    charts_dir = ROOT_DIR / 'charts'
+    os.makedirs(charts_dir, exist_ok=True)
     
     # Use forecast_output.csv if it exists, otherwise features_data.csv for history
-    forecast_path = "data/forecast_output.csv"
-    history_path = "data/features_data.csv"
+    forecast_path = ROOT_DIR / "data" / "forecast_output.csv"
+    history_path = ROOT_DIR / "data" / "features_data.csv"
     
     if not os.path.exists(forecast_path) or not os.path.exists(history_path):
         print("Data files not found.")
@@ -49,7 +54,7 @@ def generate_all_charts():
             plt.tight_layout()
             
             safe_name = state.replace(' ', '_').lower()
-            plt.savefig(f'charts/forecast_{safe_name}.png', dpi=120)
+            plt.savefig(charts_dir / f'forecast_{safe_name}.png', dpi=120)
             plt.close()
             print(f"Generated chart for {state}")
         except Exception as e:

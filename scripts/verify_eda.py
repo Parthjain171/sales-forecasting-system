@@ -1,3 +1,4 @@
+from pathlib import Path
 import pandas as pd
 import numpy as np
 import matplotlib
@@ -7,12 +8,16 @@ import seaborn as sns
 import os
 from statsmodels.tsa.seasonal import seasonal_decompose
 
-os.makedirs('charts', exist_ok=True)
+# Get the project root directory
+ROOT_DIR = Path(__file__).resolve().parent.parent
+CHARTS_DIR = ROOT_DIR / 'charts'
+os.makedirs(CHARTS_DIR, exist_ok=True)
+
 plt.style.use('seaborn-v0_8-darkgrid')
 COLOR_PALETTE = ["#6366f1", "#a855f7", "#ec4899", "#f43f5e", "#fbbf24"]
 sns.set_palette(COLOR_PALETTE)
 
-df = pd.read_csv("data/cleaned_data.csv", parse_dates=['Date'])
+df = pd.read_csv(ROOT_DIR / "data/cleaned_data.csv", parse_dates=['Date'])
 
 # Cap outliers at 99th percentile for cleaner visualization
 cap_value = df['Total'].quantile(0.99)
@@ -30,7 +35,7 @@ plt.xlabel('Date')
 plt.ylabel('Total Sales ($)')
 plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', ncol=2, fontsize='x-small')
 plt.tight_layout()
-plt.savefig('charts/eda_chart_1_sales_trend.png', dpi=150, bbox_inches='tight')
+plt.savefig(CHARTS_DIR / 'eda_chart_1_sales_trend.png', dpi=150, bbox_inches='tight')
 plt.close()
 
 # Chart 2
@@ -45,7 +50,7 @@ plt.title('EDA Chart 2: Total Sales Per State', fontsize=20, pad=20)
 plt.xlabel('Total Sales ($)')
 plt.ylabel('State')
 plt.tight_layout()
-plt.savefig('charts/eda_chart_2_total_sales_per_state.png', dpi=150, bbox_inches='tight')
+plt.savefig(CHARTS_DIR / 'eda_chart_2_total_sales_per_state.png', dpi=150, bbox_inches='tight')
 plt.close()
 
 # Chart 3
@@ -60,7 +65,7 @@ plt.ylabel('Average Sales ($)')
 plt.xticks(range(1, 13), month_names)
 plt.grid(True, linestyle='--', alpha=0.7)
 plt.tight_layout()
-plt.savefig('charts/eda_chart_3_monthly_average.png', dpi=150, bbox_inches='tight')
+plt.savefig(CHARTS_DIR / 'eda_chart_3_monthly_average.png', dpi=150, bbox_inches='tight')
 plt.close()
 
 # Chart 4
@@ -73,7 +78,7 @@ plt.ylabel('Total Sales ($) - Log Scale')
 plt.yscale('log')
 plt.xticks(rotation=90, fontsize=8)
 plt.tight_layout()
-plt.savefig('charts/eda_chart_4_distribution.png', dpi=150, bbox_inches='tight')
+plt.savefig(CHARTS_DIR / 'eda_chart_4_distribution.png', dpi=150, bbox_inches='tight')
 plt.close()
 
 print("All charts generated successfully.")

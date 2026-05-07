@@ -32,13 +32,12 @@ An end-to-end, production-grade time series forecasting pipeline designed to pre
 ```text
 ├── api/                # FastAPI server and endpoint definitions
 ├── charts/             # Generated EDA and performance visualizations
-├── data/               # Raw/Cleaned datasets and serialized (.joblib) models
+├── data/               # Raw/Cleaned datasets and serialized (.joblink) models
 ├── notebooks/          # Step-by-step EDA, training, and evaluation workflows
-├── src/                # Modular source code (Engines, Models, Preprocessing)
-├── scripts/            # Automation and verification scripts
-├── tests/              # Unit tests (Pytest)
+├── src/                # Modular source code for data loading and processing
 ├── dashboard.html      # Interactive frontend for forecast visualization
-└── requirements.txt    # Project dependencies
+├── verify_training.py  # Validation script for model training integrity
+└── generate_charts.py  # Automated visualization generation scripts
 ```
 
 ## ⚙️ Getting Started
@@ -56,23 +55,6 @@ cd api
 uvicorn main:app --reload --port 8003
 ```
 
-### 3. Running Tests & Verification
-Run unit tests and smoke tests:
-```bash
-# Unit tests
-pytest tests/
-
-# Verification scripts
-python scripts/verify_training.py
-python scripts/verify_feature_eng.py
-```
-
-## ⚙️ CI/CD
-This project uses **GitHub Actions** for continuous integration. The pipeline (`.github/workflows/pipeline.yml`) automatically:
-1. Installs dependencies.
-2. Runs unit tests for the forecasting engine.
-3. Executes verification scripts to ensure data and model integrity.
-
 ## 🔌 API Reference
 
 | Endpoint | Method | Description |
@@ -88,9 +70,7 @@ This project uses **GitHub Actions** for continuous integration. The pipeline (`
 | **Coverage** | 43 US States |
 | **Forecast Horizon** | 8 Weeks |
 | **Primary Champion** | XGBoost (Lowest global MAE) |
-| **Average MAE** | ~$97.5M (USD)* |
-
-*\*Note: The MAE scale reflects the high-volume weekly sales across large US states (e.g., California, Texas), where weekly totals range from $50M to $2B+.*
+| **Average MAE** | ~97.5M |
 
 ---
 *Developed as a robust solution for regional sales demand planning and inventory optimization.*

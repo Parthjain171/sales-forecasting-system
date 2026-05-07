@@ -1,13 +1,17 @@
+from pathlib import Path
 import pandas as pd
 import numpy as np
 import holidays
 import os
 
+# Get the project root directory
+ROOT_DIR = Path(__file__).resolve().parent.parent
+
 # Load cleaned data
-data_path = "sales-forecasting-system/data/cleaned_data.csv"
+data_path = ROOT_DIR / "data" / "cleaned_data.csv"
 if not os.path.exists(data_path):
-    # Try another path if not found (root data dir)
-    data_path = "data/cleaned_data.csv"
+    print(f"Data not found at {data_path}")
+    exit(1)
 
 df = pd.read_csv(data_path, parse_dates=['Date'])
 
@@ -43,7 +47,7 @@ nan_count = df.isna().sum().sum()
 print(f"NaN Count: {nan_count}")
 
 # Check: Save to data/features_data.csv
-output_path = "sales-forecasting-system/data/features_data.csv"
+output_path = ROOT_DIR / "data" / "features_data.csv"
 df.to_csv(output_path, index=False)
 print(f"Features data saved to {output_path}")
 

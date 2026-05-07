@@ -1,0 +1,39 @@
+name: Forecasting Pipeline CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest
+        
+    - name: Run unit tests
+      run: |
+        pytest tests/
+        
+    - name: Run verification scripts (Smoke Tests)
+      run: |
+        # Only run these if data exists (to avoid failing if data is not in repo)
+        if [ -f "data/cleaned_data.csv" ]; then
+          python scripts/verify_feature_eng.py
+        fi
+        if [ -f "data/features_data.csv" ]; then
+          python scripts/verify_training.py
+        fi

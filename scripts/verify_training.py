@@ -1,14 +1,16 @@
+from pathlib import Path
 import pandas as pd
 import os
 import sys
 
-# Add src to path
-sys.path.append(os.path.join(os.getcwd(), 'src'))
+# Get the project root directory
+ROOT_DIR = Path(__file__).resolve().parent.parent
+sys.path.append(str(ROOT_DIR / 'src'))
 
 from model_selector import compare_models
 
 def verify_all_states():
-    data_path = "data/features_data.csv"
+    data_path = ROOT_DIR / "data" / "features_data.csv"
     if not os.path.exists(data_path):
         print("Data not found.")
         return
@@ -44,6 +46,4 @@ def verify_all_states():
         print("Verification found issues.")
 
 if __name__ == "__main__":
-    # Ensure we are in the right directory
-    os.chdir('sales-forecasting-system')
     verify_all_states()

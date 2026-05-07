@@ -1,15 +1,16 @@
+from pathlib import Path
 import pandas as pd
 import os
 import sys
 
-# Add src to path
-sys.path.append(os.path.join(os.getcwd(), 'src'))
+# Get the project root directory
+ROOT_DIR = Path(__file__).resolve().parent.parent
+sys.path.append(str(ROOT_DIR / 'src'))
 
 from forecaster import ForecasterEngine
 
 def generate_forecast_output():
-    os.chdir('sales-forecasting-system')
-    data_path = "data/features_data.csv"
+    data_path = ROOT_DIR / "data" / "features_data.csv"
     if not os.path.exists(data_path):
         print("Data not found.")
         return
@@ -36,7 +37,7 @@ def generate_forecast_output():
     # Reorder columns
     final_df = final_df[['State', 'Date', 'Predicted_Sales']]
     
-    output_path = "data/forecast_output.csv"
+    output_path = ROOT_DIR / "data" / "forecast_output.csv"
     final_df.to_csv(output_path, index=False)
     print(f"\nFinal forecast output saved to {output_path}")
     
