@@ -88,7 +88,7 @@ This project uses **GitHub Actions** for continuous integration. The pipeline (`
 | **Coverage** | 43 US States |
 | **Forecast Horizon** | 8 Weeks |
 | **Primary Champion** | XGBoost (Lowest global MAE) |
-| **Average MAE** | ~$97.5M (USD)* |
+| **Average MAE** | ~$97.5 Million (USD) |
 
 *\*Note: The MAE scale reflects the high-volume weekly sales across large US states (e.g., California, Texas), where weekly totals range from $50M to $2B+.*
 
